@@ -16,11 +16,13 @@ ClipSatAudioProcessor::ClipSatAudioProcessor()
                     {
                         std::make_unique<juce::AudioParameterFloat>("inputGain", "Input Gain", 0.0f, 2.0f, 1.0f),
                         std::make_unique<juce::AudioParameterFloat>("threshold", "Threshold", juce::NormalisableRange<float>(-24.0f, 0.0f, 0.1f), -6.0f),
-                        std::make_unique<juce::AudioParameterBool>("softClipping", "Soft Clipping", true),
+                        std::make_unique<juce::AudioParameterBool>("softClipping", "Soft Clipping", false),
                         std::make_unique<juce::AudioParameterFloat>("outputGain", "Output Gain", 0.0f, 2.0f, 1.0f),
                         std::make_unique<juce::AudioParameterFloat>("drive", "Drive", 1.0f, 10.0f, 0.5f),
                         std::make_unique<juce::AudioParameterFloat>("dryWet", "Dry/Wet", 0.0f, 1.0f, 0.5f),
-                        std::make_unique<juce::AudioParameterChoice>("saturationMode", "Saturation Mode", juce::StringArray{"Soft Sine", "Hard Curve", "Analog Clip", "Sinoid Fold"}, 0)
+                        std::make_unique<juce::AudioParameterChoice>("saturationMode", "Saturation Mode", juce::StringArray{"Soft Sine", "Hard Curve", "Analog Clip", "Sinoid Fold"}, 0),
+                        std::make_unique<juce::AudioParameterBool>("clipperOnOff", "Clipper On/Off", true),
+                        std::make_unique<juce::AudioParameterBool>("satOnOff", "Saturator On/Off", true)
                    })
 {
 }
@@ -86,6 +88,8 @@ void ClipSatAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
     float inputGain = *parameters.getRawParameterValue("inputGain");
     float threshold = juce::Decibels::decibelsToGain(parameters.getRawParameterValue("threshold")->load());
     bool softClipping = *parameters.getRawParameterValue("softClipping");
+    bool clipperOnOff = *parameters.getRawParameterValue("clipperOnOff");
+    bool satOnOff = *parameters.getRawParameterValue("satOnOff");
     float driveParam = *parameters.getRawParameterValue("drive");
     float dryWetParam = *parameters.getRawParameterValue("dryWet");
     float saturationModeParam = *parameters.getRawParameterValue("saturationMode");
@@ -117,23 +121,26 @@ void ClipSatAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
             float saturatedSignal = cleanSignal;
 
             // Apply the saturation effect based on the selected mode
-            switch (static_cast<int>(saturationModeParam))
-            {
-                case 0: // Soft Sine
-                    saturatedSignal = std::sin(driveParam * cleanSignal);
-                    break;
-                case 1: // Hard Curve
-                    saturatedSignal = cleanSignal - std::pow(cleanSignal, 3) * driveParam;
-                    break;
-                case 2: // Analog Clip
-                    saturatedSignal = std::max(static_cast<float>(-driveParam), std::min(static_cast<float>(driveParam), cleanSignal));
-                    break;
-                case 3: // Sinoid Fold
-                    saturatedSignal = std::asin(std::sin(driveParam * cleanSignal));
-                    break;
-                default:
-                    break;
+            if (satOnOff){
+                switch (static_cast<int>(saturationModeParam))
+                {
+                    case 0: // Soft Sine
+                        saturatedSignal = std::sin(driveParam * cleanSignal);
+                        break;
+                    case 1: // Hard Curve
+                        saturatedSignal = cleanSignal - std::pow(cleanSignal, 3) * driveParam;
+                        break;
+                    case 2: // Analog Clip
+                        saturatedSignal = std::max(static_cast<float>(-driveParam), std::min(static_cast<float>(driveParam), cleanSignal));
+                        break;
+                    case 3: // Sinoid Fold
+                        saturatedSignal = std::asin(std::sin(driveParam * cleanSignal));
+                        break;
+                    default:
+                        break;
+                }
             }
+            
 
             // Blend the processed (wet) signal with the original (dry) signal using smoothedDryWet
             float mixedSignal = smoothedDryWet * saturatedSignal + (1 - smoothedDryWet) * cleanSignal;
@@ -143,21 +150,23 @@ void ClipSatAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
             
             float processedSample = mixedSignal;
             
-            if (softClipping)
-            {
-                // Soft clipping
-                if (processedSample > threshold)
-                    processedSample = threshold + (1 - expf(-processedSample + threshold));
-                else if (processedSample < -threshold)
-                    processedSample = -threshold - (1 - expf(-processedSample - threshold));
-            }
-            else
-            {
-                // Hard clipping
-                if (processedSample > threshold)
-                    processedSample = threshold;
-                else if (processedSample < -threshold)
-                    processedSample = -threshold;
+            if (clipperOnOff){
+                if (softClipping)
+                {
+                    // Soft clipping
+                    if (processedSample > threshold)
+                        processedSample = threshold + (1 - expf(-processedSample + threshold));
+                    else if (processedSample < -threshold)
+                        processedSample = -threshold - (1 - expf(-processedSample - threshold));
+                }
+                else
+                {
+                    // Hard clipping
+                    if (processedSample > threshold)
+                        processedSample = threshold;
+                    else if (processedSample < -threshold)
+                        processedSample = -threshold;
+                }
             }
             channelData[sample] = processedSample;
         }

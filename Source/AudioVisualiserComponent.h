@@ -20,7 +20,7 @@ protected:
         AudioVisualiserComponent::paint(g);
 
         float y = getHeight() - (getHeight() * (threshold + 1.0f) / 2.0f);
-        g.setColour(juce::Colours::red);
+        g.setColour(juce::Colours::green);
         g.drawLine(0, y, getWidth(), y, 2.0f);
     }
 

@@ -57,6 +57,8 @@ public:
     float inputGain = 1.0f; // Default input gain
     float threshold = 0.0f; // Clipping threshold
     bool softClipping = true; // Clipping mode: true for soft, false for hard
+    bool clipperOnOff = true; // Clipping mode: true for soft, false for hard
+    bool satOnOff = true;
     
     juce::AudioProcessorValueTreeState parameters;
 

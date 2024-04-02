@@ -33,7 +33,7 @@ ClipSatAudioProcessorEditor::ClipSatAudioProcessorEditor (ClipSatAudioProcessor&
     driveSlider.setLookAndFeel(&abletonLookAndFeel);
     driveSlider.setSliderStyle(juce::Slider::Rotary);
     driveSlider.setRange(0.0, 1.0);
-    driveSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 40);
+    driveSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 80, 20);
     addAndMakeVisible(driveSlider);
     driveAttachment.reset(new juce::AudioProcessorValueTreeState::SliderAttachment(audioProcessor.parameters, "drive", driveSlider));
 
@@ -46,7 +46,7 @@ ClipSatAudioProcessorEditor::ClipSatAudioProcessorEditor (ClipSatAudioProcessor&
     dryWetSlider.setLookAndFeel(&abletonLookAndFeel);
     dryWetSlider.setSliderStyle(juce::Slider::Rotary);
     dryWetSlider.setRange(0.0, 1.0);
-    dryWetSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 40);
+    dryWetSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 80, 20);
     addAndMakeVisible(dryWetSlider);
     dryWetAttachment.reset(new juce::AudioProcessorValueTreeState::SliderAttachment(audioProcessor.parameters, "dryWet", dryWetSlider));
 
@@ -121,6 +121,26 @@ ClipSatAudioProcessorEditor::ClipSatAudioProcessorEditor (ClipSatAudioProcessor&
     softClippingLabel.attachToComponent(&softClippingButton, true);
     softClippingLabel.setJustificationType(juce::Justification::centred);
     addAndMakeVisible(softClippingLabel);
+    
+    //Clipper On/Off option
+    clipperButton.setButtonText("Clipper On/Off");
+    addAndMakeVisible(clipperButton);
+    clipperOnOffAttachment.reset(new juce::AudioProcessorValueTreeState::ButtonAttachment(audioProcessor.parameters, "clipperOnOff", clipperButton));
+
+    //softClippingLabel.setText("Soft Clipping", juce::dontSendNotification);
+    clipperOnOffLabel.attachToComponent(&clipperButton, true);
+    clipperOnOffLabel.setJustificationType(juce::Justification::centred);
+    addAndMakeVisible(clipperOnOffLabel);
+    
+    //saturator On/Off option
+    satButton.setButtonText("Saturator On/Off");
+    addAndMakeVisible(satButton);
+    satOnOffAttachment.reset(new juce::AudioProcessorValueTreeState::ButtonAttachment(audioProcessor.parameters, "satOnOff", satButton));
+
+    //softClippingLabel.setText("Soft Clipping", juce::dontSendNotification);
+    satOnOffLabel.attachToComponent(&satButton, true);
+    satOnOffLabel.setJustificationType(juce::Justification::centred);
+    addAndMakeVisible(satOnOffLabel);
 
     
     audioVisualiser.setBufferSize(512); // Set the buffer size for the visualiser
@@ -128,7 +148,7 @@ ClipSatAudioProcessorEditor::ClipSatAudioProcessorEditor (ClipSatAudioProcessor&
     audioVisualiser.setColours(juce::Colours::black, juce::Colours::white); // Set the background and waveform colours
     addAndMakeVisible(audioVisualiser);
     
-    setSize(600, 600);
+    setSize(600, 400);
 }
 
 ClipSatAudioProcessorEditor::~ClipSatAudioProcessorEditor()
@@ -186,12 +206,23 @@ void ClipSatAudioProcessorEditor::resized()
     dryWetLabel.setBounds(dryWetSlider.getX(), dryWetSlider.getY() - labelHeight, dryWetSlider.getWidth(), labelHeight);
     saturationLabel.setBounds(saturationModeBox.getX(), saturationModeBox.getY() - labelHeight, saturationModeBox.getWidth(), labelHeight);
 
-    
+    int totalComponents2 = 3; // Input, Output, Threshold, Drive, Dry/Wet, Saturation Mode, and Soft Clipping Button
+    int spacing2 = 20; // Spacing between components
+    int totalSpacing2 = (totalComponents2 - 1) * spacing2;
+    int componentWidth2 = (area.getWidth() - totalSpacing2) / totalComponents2;
+    int xPosition2 = (area.getWidth() - (componentWidth2 * totalComponents2 + totalSpacing2)) / 2;
     // Position the audio visualizer below the sliders
     audioVisualiser.setBounds(10, inputGainSlider.getBottom() + verticalOffset, area.getWidth() - 20, visualizerHeight);
 
     // Position the soft clipping button below the audio visualizer
-    softClippingButton.setBounds(thresholdSlider.getX(), audioVisualiser.getBottom() + verticalOffset, componentWidth, buttonHeight);
+    softClippingButton.setBounds(xPosition2, audioVisualiser.getBottom() + verticalOffset, componentWidth, buttonHeight);
+    xPosition2 += componentWidth2 + spacing2;
+    
+    clipperButton.setBounds(xPosition2, audioVisualiser.getBottom() + verticalOffset, componentWidth, buttonHeight);
+    xPosition2 += componentWidth2 + spacing2;
+    
+    satButton.setBounds(xPosition2, audioVisualiser.getBottom() + verticalOffset, componentWidth, buttonHeight);
+    xPosition2 += componentWidth2 + spacing2;
 }
 
 

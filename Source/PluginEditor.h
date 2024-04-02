@@ -121,17 +121,20 @@ private:
     // access the processor object that created it.
     ClipSatAudioProcessor& audioProcessor;
     
-    // GUI components
-    juce::Slider inputGainSlider;
-    juce::Slider thresholdSlider;
-    juce::ToggleButton softClippingButton;
-    juce::Slider outputGainSlider;
+    
 
     // Attachments bridge the GUI components with the processor's parameters
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> inputGainAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> thresholdAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> softClippingAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> clipperOnOffAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> satOnOffAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> outputGainAttachment;
+    // Attachment for each parameter
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> driveAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> outputAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> dryWetAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> saturationModeAttachment;
     
     juce::Label inputGainLabel;
     juce::Label thresholdLabel;
@@ -140,19 +143,24 @@ private:
     juce::Label driveLabel;
     juce::Label dryWetLabel;
     juce::Label saturationLabel;
+    juce::Label clipperOnOffLabel;
+    juce::Label satOnOffLabel;
     
     // UI components
+    // GUI components
+    juce::Slider inputGainSlider;
+    juce::Slider thresholdSlider;
+    juce::ToggleButton softClippingButton;
+    juce::ToggleButton clipperButton;
+    juce::ToggleButton satButton;
+    juce::Slider outputGainSlider;
     juce::Slider driveSlider;
     juce::Slider outputSlider;
     juce::Slider dryWetSlider;
     juce::ComboBox saturationModeBox;
     
 
-    // Attachment for each parameter
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> driveAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> outputAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> dryWetAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> saturationModeAttachment;
+    
     
     //juce::AudioVisualiserComponent audioVisualiser; // Add this line
     CustomAudioVisualiserComponent audioVisualiser;

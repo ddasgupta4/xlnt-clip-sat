@@ -137,6 +137,9 @@ private:
     juce::Label thresholdLabel;
     juce::Label outputGainLabel;
     juce::Label softClippingLabel;
+    juce::Label driveLabel;
+    juce::Label dryWetLabel;
+    juce::Label saturationLabel;
     
     // UI components
     juce::Slider driveSlider;

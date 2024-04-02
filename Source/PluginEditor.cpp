@@ -17,27 +17,51 @@ ClipSatAudioProcessorEditor::ClipSatAudioProcessorEditor (ClipSatAudioProcessor&
     //setSize(400, 300);
     setLookAndFeel(&abletonLookAndFeel);
     
-    driveAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.parameters, "drive", driveSlider);
-    outputAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.parameters, "output", outputSlider);
-    dryWetAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.parameters, "dryWet", dryWetSlider);
-    saturationModeAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(audioProcessor.parameters, "saturationMode", saturationModeBox);
+    //driveAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.parameters, "drive", driveSlider);
+    //dryWetAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.parameters, "dryWet", dryWetSlider);
+    //saturationModeAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(audioProcessor.parameters, "saturationMode", saturationModeBox);
 
     // Set up the sliders
+    /*
     addAndMakeVisible(driveSlider);
     driveSlider.setRange(0.0, 1.0);
     driveSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 40);
     driveAttachment.reset(new juce::AudioProcessorValueTreeState::SliderAttachment(audioProcessor.parameters, "drive", driveSlider));
+     */
+    
+    // Drive Slider and Label
+    driveSlider.setLookAndFeel(&abletonLookAndFeel);
+    driveSlider.setSliderStyle(juce::Slider::Rotary);
+    driveSlider.setRange(0.0, 1.0);
+    driveSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 40);
+    addAndMakeVisible(driveSlider);
+    driveAttachment.reset(new juce::AudioProcessorValueTreeState::SliderAttachment(audioProcessor.parameters, "drive", driveSlider));
 
-    addAndMakeVisible(outputSlider);
-    outputSlider.setRange(0.0, 1.0);
-    outputSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 40);
-    outputAttachment.reset(new juce::AudioProcessorValueTreeState::SliderAttachment(audioProcessor.parameters, "output", outputSlider));
+    driveLabel.setText("Drive", juce::dontSendNotification);
+    driveLabel.attachToComponent(&inputGainSlider, false);
+    driveLabel.setJustificationType(juce::Justification::centred);
+    addAndMakeVisible(driveLabel);
+    
+    // Drive Slider and Label
+    dryWetSlider.setLookAndFeel(&abletonLookAndFeel);
+    dryWetSlider.setSliderStyle(juce::Slider::Rotary);
+    dryWetSlider.setRange(0.0, 1.0);
+    dryWetSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 40);
+    addAndMakeVisible(dryWetSlider);
+    dryWetAttachment.reset(new juce::AudioProcessorValueTreeState::SliderAttachment(audioProcessor.parameters, "dryWet", dryWetSlider));
 
+    dryWetLabel.setText("Dry/Wet", juce::dontSendNotification);
+    dryWetLabel.attachToComponent(&inputGainSlider, false);
+    dryWetLabel.setJustificationType(juce::Justification::centred);
+    addAndMakeVisible(dryWetLabel);
+
+    /*
     addAndMakeVisible(dryWetSlider);
     dryWetSlider.setRange(0.0, 1.0);
     dryWetSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 40);
     dryWetAttachment.reset(new juce::AudioProcessorValueTreeState::SliderAttachment(audioProcessor.parameters, "dryWet", dryWetSlider));
-
+     */
+    
     // Set up the combo box for saturation mode selection
     addAndMakeVisible(saturationModeBox);
     saturationModeBox.addItem("Soft Sine", 1);
@@ -46,6 +70,11 @@ ClipSatAudioProcessorEditor::ClipSatAudioProcessorEditor (ClipSatAudioProcessor&
     saturationModeBox.addItem("Sinoid Fold", 4);
     saturationModeBox.setSelectedId(1);
     saturationModeAttachment.reset(new juce::AudioProcessorValueTreeState::ComboBoxAttachment(audioProcessor.parameters, "saturationMode", saturationModeBox));
+    
+    saturationLabel.setText("Saturation Mode", juce::dontSendNotification);
+    saturationLabel.attachToComponent(&inputGainSlider, false);
+    saturationLabel.setJustificationType(juce::Justification::centred);
+    addAndMakeVisible(saturationLabel);
 
     // Input Gain Slider and Label
     inputGainSlider.setLookAndFeel(&abletonLookAndFeel);
@@ -99,7 +128,7 @@ ClipSatAudioProcessorEditor::ClipSatAudioProcessorEditor (ClipSatAudioProcessor&
     audioVisualiser.setColours(juce::Colours::black, juce::Colours::white); // Set the background and waveform colours
     addAndMakeVisible(audioVisualiser);
     
-    setSize(400, 400);
+    setSize(600, 600);
 }
 
 ClipSatAudioProcessorEditor::~ClipSatAudioProcessorEditor()
@@ -117,7 +146,7 @@ void ClipSatAudioProcessorEditor::paint (juce::Graphics& g)
 void ClipSatAudioProcessorEditor::resized()
 {
     auto area = getLocalBounds();
-    int totalComponents = 3; // Input, Output, and Threshold
+    int totalComponents = 7; // Input, Output, Threshold, Drive, Dry/Wet, Saturation Mode, and Soft Clipping Button
     int spacing = 10; // Spacing between components
     int totalSpacing = (totalComponents - 1) * spacing;
     int componentWidth = (area.getWidth() - totalSpacing) / totalComponents;
@@ -129,30 +158,42 @@ void ClipSatAudioProcessorEditor::resized()
 
     int xPosition = (area.getWidth() - (componentWidth * totalComponents + totalSpacing)) / 2;
 
+    // Position the original sliders
     inputGainSlider.setBounds(xPosition, (area.getHeight() - sliderHeight) / 4, componentWidth, sliderHeight);
     xPosition += componentWidth + spacing;
+    
+    // Position the new sliders and combo box
+    driveSlider.setBounds(xPosition, (area.getHeight() - sliderHeight) / 4, componentWidth, sliderHeight);
+    xPosition += componentWidth + spacing;
 
+    dryWetSlider.setBounds(xPosition, (area.getHeight() - sliderHeight) / 4, componentWidth, sliderHeight);
+    xPosition += componentWidth + spacing;
+
+    saturationModeBox.setBounds(xPosition, (area.getHeight() - sliderHeight) / 4, componentWidth, sliderHeight);
+    xPosition += componentWidth + spacing;
+    
     thresholdSlider.setBounds(xPosition, (area.getHeight() - sliderHeight) / 4, componentWidth, sliderHeight);
     xPosition += componentWidth + spacing;
 
     outputGainSlider.setBounds(xPosition, (area.getHeight() - sliderHeight) / 4, componentWidth, sliderHeight);
+    xPosition += componentWidth + spacing;
 
     // Position the labels above the sliders
     inputGainLabel.setBounds(inputGainSlider.getX(), inputGainSlider.getY() - labelHeight, inputGainSlider.getWidth(), labelHeight);
     thresholdLabel.setBounds(thresholdSlider.getX(), thresholdSlider.getY() - labelHeight, thresholdSlider.getWidth(), labelHeight);
     outputGainLabel.setBounds(outputGainSlider.getX(), outputGainSlider.getY() - labelHeight, outputGainSlider.getWidth(), labelHeight);
+    driveLabel.setBounds(driveSlider.getX(), driveSlider.getY() - labelHeight, driveSlider.getWidth(), labelHeight);
+    dryWetLabel.setBounds(dryWetSlider.getX(), dryWetSlider.getY() - labelHeight, dryWetSlider.getWidth(), labelHeight);
+    saturationLabel.setBounds(saturationModeBox.getX(), saturationModeBox.getY() - labelHeight, saturationModeBox.getWidth(), labelHeight);
 
+    
     // Position the audio visualizer below the sliders
     audioVisualiser.setBounds(10, inputGainSlider.getBottom() + verticalOffset, area.getWidth() - 20, visualizerHeight);
 
     // Position the soft clipping button below the audio visualizer
     softClippingButton.setBounds(thresholdSlider.getX(), audioVisualiser.getBottom() + verticalOffset, componentWidth, buttonHeight);
-    
-    driveSlider.setBounds(200, 40, 100, 30);
-    outputSlider.setBounds(200, 80, 100, 30);
-    dryWetSlider.setBounds(200, 120, 100, 30);
-    saturationModeBox.setBounds(200, 160, 100, 30);
 }
+
 
 CustomAudioVisualiserComponent& ClipSatAudioProcessorEditor::getAudioVisualiser()
 {

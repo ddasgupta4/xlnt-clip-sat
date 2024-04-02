@@ -19,7 +19,6 @@ ClipSatAudioProcessor::ClipSatAudioProcessor()
                         std::make_unique<juce::AudioParameterBool>("softClipping", "Soft Clipping", true),
                         std::make_unique<juce::AudioParameterFloat>("outputGain", "Output Gain", 0.0f, 2.0f, 1.0f),
                         std::make_unique<juce::AudioParameterFloat>("drive", "Drive", 1.0f, 10.0f, 0.5f),
-                        std::make_unique<juce::AudioParameterFloat>("drive", "Drive", 1.0f, 10.0f, 0.5f),
                         std::make_unique<juce::AudioParameterFloat>("dryWet", "Dry/Wet", 0.0f, 1.0f, 0.5f),
                         std::make_unique<juce::AudioParameterChoice>("saturationMode", "Saturation Mode", juce::StringArray{"Soft Sine", "Hard Curve", "Analog Clip", "Sinoid Fold"}, 0)
                    })
@@ -87,6 +86,13 @@ void ClipSatAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
     float inputGain = *parameters.getRawParameterValue("inputGain");
     float threshold = juce::Decibels::decibelsToGain(parameters.getRawParameterValue("threshold")->load());
     bool softClipping = *parameters.getRawParameterValue("softClipping");
+    float driveParam = *parameters.getRawParameterValue("drive");
+    float dryWetParam = *parameters.getRawParameterValue("dryWet");
+    float saturationModeParam = *parameters.getRawParameterValue("saturationMode");
+    float outputGainValue = *parameters.getRawParameterValue("outputGain");
+
+    // Apply the input gain to the buffer
+    buffer.applyGain(inputGain);
     
     
     // Push the input buffer to the visualizer before any processing
@@ -95,24 +101,19 @@ void ClipSatAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
             editor->getAudioVisualiser().pushInputBuffer(buffer);
         }
     
-    float driveParam = *parameters.getRawParameterValue("drive");
-    float outputParam = *parameters.getRawParameterValue("output");
-    float dryWetParam = *parameters.getRawParameterValue("dryWet");
-    float saturationModeParam = *parameters.getRawParameterValue("saturationMode");
-
+    
     auto numSamples = buffer.getNumSamples();
 
     for (int sample = 0; sample < numSamples; ++sample)
     {
         // Smoothly update the parameter values
         smoothedDrive += smoothingFactor * (driveParam - smoothedDrive);
-        smoothedOutput += smoothingFactor * (outputParam - smoothedOutput);
         smoothedDryWet += smoothingFactor * (dryWetParam - smoothedDryWet);
 
         for (int channel = 0; channel < totalNumInputChannels; ++channel)
         {
             auto* channelData = buffer.getWritePointer(channel);
-            float cleanSignal = channelData[sample] * inputGain;
+            float cleanSignal = channelData[sample];
             float saturatedSignal = cleanSignal;
 
             // Apply the saturation effect based on the selected mode
@@ -138,9 +139,9 @@ void ClipSatAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
             float mixedSignal = smoothedDryWet * saturatedSignal + (1 - smoothedDryWet) * cleanSignal;
 
             // Apply the output level control using smoothedOutput
-            channelData[sample] = smoothedOutput * mixedSignal;
+            channelData[sample] = mixedSignal;
             
-            float processedSample = smoothedOutput * mixedSignal;
+            float processedSample = mixedSignal;
             
             if (softClipping)
             {
@@ -162,8 +163,6 @@ void ClipSatAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
         }
     }
     
-    // Retrieve the output gain value
-    float outputGainValue = *parameters.getRawParameterValue("outputGain");
 
     // Apply the output gain to the buffer
     buffer.applyGain(outputGainValue);

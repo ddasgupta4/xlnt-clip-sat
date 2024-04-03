@@ -83,6 +83,9 @@ private:
     juce::AudioSampleBuffer delayBuffer2;
     int delayWritePosition2 = 0;
     
+    juce::IIRFilter lowPassFilter1, lowPassFilter2; // Low-pass filters for each delay line
+    float feedbackAmount = 0.1f; // Feedback amount
+    
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ClipSatAudioProcessor)
 };
 

@@ -24,7 +24,7 @@ ClipSatAudioProcessor::ClipSatAudioProcessor()
                         std::make_unique<juce::AudioParameterBool>("clipperOnOff", "Clipper On/Off", true),
                         std::make_unique<juce::AudioParameterBool>("satOnOff", "Saturator On/Off", true),
                         std::make_unique<juce::AudioParameterFloat>("rate", "Rate", 0.1f, 10.0f, 1.0f),
-                        std::make_unique<juce::AudioParameterFloat>("depth", "Depth", 0.0f, 1.0f, 0.5f),
+                        std::make_unique<juce::AudioParameterFloat>("depth", "Depth", 0.0f, 0.50f, 0.1f),
                         std::make_unique<juce::AudioParameterFloat>("mix", "Mix", 0.0f, 1.0f, 0.5f),
                         std::make_unique<juce::AudioParameterBool>("chorusOnOff", "Chorus On/Off", true)
                    })
@@ -53,6 +53,8 @@ void ClipSatAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBloc
     delayBufferChannels = numInputChannels;
     delayWritePosition = 0;
     delayWritePosition2 = 0;
+    lowPassFilter1.setCoefficients(juce::IIRCoefficients::makeLowPass(sampleRate, 4000.0));
+    lowPassFilter2.setCoefficients(juce::IIRCoefficients::makeLowPass(sampleRate, 4000.0));
 }
 
 void ClipSatAudioProcessor::releaseResources()
@@ -137,10 +139,12 @@ void ClipSatAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
         auto inL = buffer.getReadPointer(0)[sample];
         auto inR = buffer.getNumChannels() > 1 ? buffer.getReadPointer(1)[sample] : inL;
 
-        auto delayTime = (1.0f + std::sin(lfoPhase)) * 0.5f * *depthParam * 0.02f; // 20ms max delay
+        
         lfoPhase += *rateParam * 0.01f; // LFO rate
         if (lfoPhase >= juce::MathConstants<float>::twoPi)
             lfoPhase -= juce::MathConstants<float>::twoPi;
+        
+        auto delayTime = (1.0f + std::sin(lfoPhase)) * 0.5f * *depthParam * 0.02f; // 20ms max delay
 
         int delaySamples = static_cast<int>(delayTime * getSampleRate());
 
@@ -155,18 +159,28 @@ void ClipSatAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
             {
                 auto* delayData1 = delayBuffer.getWritePointer(channel);
                 auto* delayData2 = delayBuffer2.getWritePointer(channel);
+                
+                // Write the input signal into the delay buffers
                 delayData1[delayWritePosition] = cleanSignal;
                 delayData2[delayWritePosition2] = cleanSignal;
 
+                // Calculate the read positions for the delay buffers
                 int readPosition1 = delayWritePosition - static_cast<int>((1.0f + std::sin(lfoPhase)) * 0.5f * *depthParam * 0.02f * getSampleRate());
                 int readPosition2 = delayWritePosition2 - static_cast<int>((1.0f + std::sin(lfoPhase2)) * 0.5f * *depthParam * 0.02f * getSampleRate());
 
+                // Wrap the read positions if they go beyond the buffer bounds
                 if (readPosition1 < 0) readPosition1 += delayBufferSamples;
                 if (readPosition2 < 0) readPosition2 += delayBufferSamples;
 
+                // Read the delayed samples from the delay buffers
                 auto delaySample1 = delayData1[readPosition1];
                 auto delaySample2 = delayData2[readPosition2];
 
+                // Process the delayed samples through the low-pass filters
+                delaySample1 = lowPassFilter1.processSingleSampleRaw(delaySample1 + feedbackAmount * delaySample1);
+                delaySample2 = lowPassFilter2.processSingleSampleRaw(delaySample2 + feedbackAmount * delaySample2);
+
+                // Mix the delayed samples with the original signal
                 channelData[sample] = cleanSignal + (*mixParam * ((delaySample1 + delaySample2) - cleanSignal));
             }
                 

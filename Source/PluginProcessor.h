@@ -73,6 +73,16 @@ private:
     float smoothedDryWet = 0.0f;
     const float smoothingFactor = 0.01f; // Adjust this value to control the smoothing speed
     
+    float lfoPhase = 0.0f;
+    juce::AudioSampleBuffer delayBuffer;
+    int delayBufferSamples = 0;
+    int delayBufferChannels = 0;
+    int delayWritePosition = 0;
+    
+    float lfoPhase2 = 0.0f;
+    juce::AudioSampleBuffer delayBuffer2;
+    int delayWritePosition2 = 0;
+    
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ClipSatAudioProcessor)
 };
 

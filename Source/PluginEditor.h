@@ -59,7 +59,7 @@ class CustomAudioVisualiserComponent : public juce::AudioVisualiserComponent
 
             // Draw the output waveform in the bottom lane (in red)
             juce::Rectangle<float> outputLane(0, laneHeight, getWidth(), laneHeight);
-            drawWaveform(g, outputBuffer, juce::Colours::red, outputLane); // Using 50% opacity for the output
+            drawWaveform(g, outputBuffer, juce::Colours::green, outputLane); // Using 50% opacity for the output
 
             // Draw the threshold line in blue across both lanes
             float y = juce::jmap<float>(threshold, -1.0f, 1.0f, static_cast<float>(getHeight()), 0.0f);
@@ -80,6 +80,7 @@ class CustomAudioVisualiserComponent : public juce::AudioVisualiserComponent
                 auto height = bounds.getHeight();
 
                 juce::Path path;
+                
                 path.startNewSubPath(0, juce::jmap<float>(channelData[0], -1.0f, 1.0f, height, 0));
 
                 for (int sample = 0; sample < numSamples; ++sample)
@@ -129,12 +130,15 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> softClippingAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> clipperOnOffAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> satOnOffAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> chorusOnOffAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> outputGainAttachment;
-    // Attachment for each parameter
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> driveAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> outputAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> dryWetAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> saturationModeAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> depthAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> rateAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> mixAttachment;
     
     juce::Label inputGainLabel;
     juce::Label thresholdLabel;
@@ -145,6 +149,10 @@ private:
     juce::Label saturationLabel;
     juce::Label clipperOnOffLabel;
     juce::Label satOnOffLabel;
+    juce::Label chorusOnOffLabel;
+    juce::Label rateLabel;
+    juce::Label depthLabel;
+    juce::Label mixLabel;
     
     // UI components
     // GUI components
@@ -153,11 +161,15 @@ private:
     juce::ToggleButton softClippingButton;
     juce::ToggleButton clipperButton;
     juce::ToggleButton satButton;
+    juce::ToggleButton chorusButton;
     juce::Slider outputGainSlider;
     juce::Slider driveSlider;
     juce::Slider outputSlider;
     juce::Slider dryWetSlider;
     juce::ComboBox saturationModeBox;
+    juce::Slider rateSlider;
+    juce::Slider depthSlider;
+    juce::Slider mixSlider;
     
 
     

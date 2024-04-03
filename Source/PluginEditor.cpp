@@ -33,7 +33,7 @@ ClipSatAudioProcessorEditor::ClipSatAudioProcessorEditor (ClipSatAudioProcessor&
     driveSlider.setLookAndFeel(&abletonLookAndFeel);
     driveSlider.setSliderStyle(juce::Slider::Rotary);
     driveSlider.setRange(0.0, 1.0);
-    driveSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 80, 20);
+    driveSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 20);
     addAndMakeVisible(driveSlider);
     driveAttachment.reset(new juce::AudioProcessorValueTreeState::SliderAttachment(audioProcessor.parameters, "drive", driveSlider));
 
@@ -46,7 +46,7 @@ ClipSatAudioProcessorEditor::ClipSatAudioProcessorEditor (ClipSatAudioProcessor&
     dryWetSlider.setLookAndFeel(&abletonLookAndFeel);
     dryWetSlider.setSliderStyle(juce::Slider::Rotary);
     dryWetSlider.setRange(0.0, 1.0);
-    dryWetSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 80, 20);
+    dryWetSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 20);
     addAndMakeVisible(dryWetSlider);
     dryWetAttachment.reset(new juce::AudioProcessorValueTreeState::SliderAttachment(audioProcessor.parameters, "dryWet", dryWetSlider));
 
@@ -79,7 +79,7 @@ ClipSatAudioProcessorEditor::ClipSatAudioProcessorEditor (ClipSatAudioProcessor&
     // Input Gain Slider and Label
     inputGainSlider.setLookAndFeel(&abletonLookAndFeel);
     inputGainSlider.setSliderStyle(juce::Slider::Rotary);
-    inputGainSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 80, 20);
+    inputGainSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 20);
     addAndMakeVisible(inputGainSlider);
     inputGainAttachment.reset(new juce::AudioProcessorValueTreeState::SliderAttachment(audioProcessor.parameters, "inputGain", inputGainSlider));
 
@@ -91,7 +91,7 @@ ClipSatAudioProcessorEditor::ClipSatAudioProcessorEditor (ClipSatAudioProcessor&
     // Threshold Slider and Label
     thresholdSlider.setLookAndFeel(&abletonLookAndFeel);
     thresholdSlider.setSliderStyle(juce::Slider::Rotary);
-    thresholdSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 80, 20);
+    thresholdSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 20);
     addAndMakeVisible(thresholdSlider);
     thresholdAttachment.reset(new juce::AudioProcessorValueTreeState::SliderAttachment(audioProcessor.parameters, "threshold", thresholdSlider));
 
@@ -103,7 +103,7 @@ ClipSatAudioProcessorEditor::ClipSatAudioProcessorEditor (ClipSatAudioProcessor&
     // Output Gain Slider and Label
     outputGainSlider.setLookAndFeel(&abletonLookAndFeel);
     outputGainSlider.setSliderStyle(juce::Slider::Rotary);
-    outputGainSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 80, 20);
+    outputGainSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 20);
     addAndMakeVisible(outputGainSlider);
     outputGainAttachment.reset(new juce::AudioProcessorValueTreeState::SliderAttachment(audioProcessor.parameters, "outputGain", outputGainSlider));
 
@@ -127,7 +127,6 @@ ClipSatAudioProcessorEditor::ClipSatAudioProcessorEditor (ClipSatAudioProcessor&
     addAndMakeVisible(clipperButton);
     clipperOnOffAttachment.reset(new juce::AudioProcessorValueTreeState::ButtonAttachment(audioProcessor.parameters, "clipperOnOff", clipperButton));
 
-    //softClippingLabel.setText("Soft Clipping", juce::dontSendNotification);
     clipperOnOffLabel.attachToComponent(&clipperButton, true);
     clipperOnOffLabel.setJustificationType(juce::Justification::centred);
     addAndMakeVisible(clipperOnOffLabel);
@@ -137,10 +136,58 @@ ClipSatAudioProcessorEditor::ClipSatAudioProcessorEditor (ClipSatAudioProcessor&
     addAndMakeVisible(satButton);
     satOnOffAttachment.reset(new juce::AudioProcessorValueTreeState::ButtonAttachment(audioProcessor.parameters, "satOnOff", satButton));
 
-    //softClippingLabel.setText("Soft Clipping", juce::dontSendNotification);
     satOnOffLabel.attachToComponent(&satButton, true);
     satOnOffLabel.setJustificationType(juce::Justification::centred);
     addAndMakeVisible(satOnOffLabel);
+    
+    //saturator On/Off option
+    chorusButton.setButtonText("Chorus On/Off");
+    addAndMakeVisible(chorusButton);
+    chorusOnOffAttachment.reset(new juce::AudioProcessorValueTreeState::ButtonAttachment(audioProcessor.parameters, "chorusOnOff", chorusButton));
+
+    chorusOnOffLabel.attachToComponent(&chorusButton, true);
+    chorusOnOffLabel.setJustificationType(juce::Justification::centred);
+    addAndMakeVisible(chorusOnOffLabel);
+    
+    // Rate slider
+    rateSlider.setRange(0.1f, 10.0f, 0.1f);
+    rateSlider.setLookAndFeel(&abletonLookAndFeel);
+    rateSlider.setSliderStyle(juce::Slider::Rotary);
+    rateSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 20);
+    addAndMakeVisible(rateSlider);
+    rateAttachment.reset(new juce::AudioProcessorValueTreeState::SliderAttachment(audioProcessor.parameters, "rate", rateSlider));
+
+    rateLabel.setText("Rate", juce::dontSendNotification);
+    rateLabel.attachToComponent(&rateSlider, false);
+    rateLabel.setJustificationType(juce::Justification::centred);
+    addAndMakeVisible(rateLabel);
+
+    // Depth slider
+    depthSlider.setRange(0.0f, 1.0f, 0.01f);
+    depthSlider.setLookAndFeel(&abletonLookAndFeel);
+    depthSlider.setSliderStyle(juce::Slider::Rotary);
+    depthSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 20);
+    addAndMakeVisible(depthSlider);
+    rateAttachment.reset(new juce::AudioProcessorValueTreeState::SliderAttachment(audioProcessor.parameters, "depth", depthSlider));
+
+    depthLabel.setText("Depth", juce::dontSendNotification);
+    depthLabel.attachToComponent(&depthSlider, false);
+    depthLabel.setJustificationType(juce::Justification::centred);
+    addAndMakeVisible(depthLabel);
+
+    // Mix slider
+    addAndMakeVisible(mixSlider);
+    mixSlider.setRange(0.0f, 1.0f, 0.01f);
+    mixSlider.setLookAndFeel(&abletonLookAndFeel);
+    mixSlider.setSliderStyle(juce::Slider::Rotary);
+    mixSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 20);
+    addAndMakeVisible(mixSlider);
+    mixAttachment.reset(new juce::AudioProcessorValueTreeState::SliderAttachment(audioProcessor.parameters, "mix", mixSlider));
+
+    mixLabel.setText("Chorus Mix", juce::dontSendNotification);
+    mixLabel.attachToComponent(&mixSlider, false);
+    mixLabel.setJustificationType(juce::Justification::centred);
+    addAndMakeVisible(mixLabel);
 
     
     audioVisualiser.setBufferSize(512); // Set the buffer size for the visualiser
@@ -166,7 +213,7 @@ void ClipSatAudioProcessorEditor::paint (juce::Graphics& g)
 void ClipSatAudioProcessorEditor::resized()
 {
     auto area = getLocalBounds();
-    int totalComponents = 7; // Input, Output, Threshold, Drive, Dry/Wet, Saturation Mode, and Soft Clipping Button
+    int totalComponents = 10; // Input, Output, Threshold, Drive, Dry/Wet, Saturation Mode, and Soft Clipping Button
     int spacing = 10; // Spacing between components
     int totalSpacing = (totalComponents - 1) * spacing;
     int componentWidth = (area.getWidth() - totalSpacing) / totalComponents;
@@ -194,6 +241,15 @@ void ClipSatAudioProcessorEditor::resized()
     
     thresholdSlider.setBounds(xPosition, (area.getHeight() - sliderHeight) / 4, componentWidth, sliderHeight);
     xPosition += componentWidth + spacing;
+    
+    rateSlider.setBounds(xPosition, (area.getHeight() - sliderHeight) / 4, componentWidth, sliderHeight);
+    xPosition += componentWidth + spacing;
+    
+    depthSlider.setBounds(xPosition, (area.getHeight() - sliderHeight) / 4, componentWidth, sliderHeight);
+    xPosition += componentWidth + spacing;
+    
+    mixSlider.setBounds(xPosition, (area.getHeight() - sliderHeight) / 4, componentWidth, sliderHeight);
+    xPosition += componentWidth + spacing;
 
     outputGainSlider.setBounds(xPosition, (area.getHeight() - sliderHeight) / 4, componentWidth, sliderHeight);
     xPosition += componentWidth + spacing;
@@ -206,7 +262,7 @@ void ClipSatAudioProcessorEditor::resized()
     dryWetLabel.setBounds(dryWetSlider.getX(), dryWetSlider.getY() - labelHeight, dryWetSlider.getWidth(), labelHeight);
     saturationLabel.setBounds(saturationModeBox.getX(), saturationModeBox.getY() - labelHeight, saturationModeBox.getWidth(), labelHeight);
 
-    int totalComponents2 = 3; // Input, Output, Threshold, Drive, Dry/Wet, Saturation Mode, and Soft Clipping Button
+    int totalComponents2 = 4; // Input, Output, Threshold, Drive, Dry/Wet, Saturation Mode, and Soft Clipping Button
     int spacing2 = 20; // Spacing between components
     int totalSpacing2 = (totalComponents2 - 1) * spacing2;
     int componentWidth2 = (area.getWidth() - totalSpacing2) / totalComponents2;
@@ -223,6 +279,11 @@ void ClipSatAudioProcessorEditor::resized()
     
     satButton.setBounds(xPosition2, audioVisualiser.getBottom() + verticalOffset, componentWidth, buttonHeight);
     xPosition2 += componentWidth2 + spacing2;
+    
+    chorusButton.setBounds(xPosition2, audioVisualiser.getBottom() + verticalOffset, componentWidth, buttonHeight);
+    xPosition2 += componentWidth2 + spacing2;
+    
+    
 }
 
 

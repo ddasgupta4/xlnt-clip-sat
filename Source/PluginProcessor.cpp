@@ -22,7 +22,11 @@ ClipSatAudioProcessor::ClipSatAudioProcessor()
                         std::make_unique<juce::AudioParameterFloat>("dryWet", "Dry/Wet", 0.0f, 1.0f, 0.5f),
                         std::make_unique<juce::AudioParameterChoice>("saturationMode", "Saturation Mode", juce::StringArray{"Soft Sine", "Hard Curve", "Analog Clip", "Sinoid Fold"}, 0),
                         std::make_unique<juce::AudioParameterBool>("clipperOnOff", "Clipper On/Off", true),
-                        std::make_unique<juce::AudioParameterBool>("satOnOff", "Saturator On/Off", true)
+                        std::make_unique<juce::AudioParameterBool>("satOnOff", "Saturator On/Off", true),
+                        std::make_unique<juce::AudioParameterFloat>("rate", "Rate", 0.1f, 10.0f, 1.0f),
+                        std::make_unique<juce::AudioParameterFloat>("depth", "Depth", 0.0f, 1.0f, 0.5f),
+                        std::make_unique<juce::AudioParameterFloat>("mix", "Mix", 0.0f, 1.0f, 0.5f),
+                        std::make_unique<juce::AudioParameterBool>("chorusOnOff", "Chorus On/Off", true)
                    })
 {
 }
@@ -39,6 +43,16 @@ void ClipSatAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBloc
 {
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
+    const int numInputChannels = getTotalNumInputChannels();
+    const int delayBufferSize = 2 * (sampleRate + samplesPerBlock);
+    delayBuffer.setSize(numInputChannels, delayBufferSize);
+    delayBuffer.clear();
+    delayBuffer2.setSize(numInputChannels, delayBufferSize);
+    delayBuffer2.clear();
+    delayBufferSamples = delayBufferSize;
+    delayBufferChannels = numInputChannels;
+    delayWritePosition = 0;
+    delayWritePosition2 = 0;
 }
 
 void ClipSatAudioProcessor::releaseResources()
@@ -89,11 +103,16 @@ void ClipSatAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
     float threshold = juce::Decibels::decibelsToGain(parameters.getRawParameterValue("threshold")->load());
     bool softClipping = *parameters.getRawParameterValue("softClipping");
     bool clipperOnOff = *parameters.getRawParameterValue("clipperOnOff");
+    bool chorusOnOff = *parameters.getRawParameterValue("chorusOnOff");
     bool satOnOff = *parameters.getRawParameterValue("satOnOff");
     float driveParam = *parameters.getRawParameterValue("drive");
     float dryWetParam = *parameters.getRawParameterValue("dryWet");
     float saturationModeParam = *parameters.getRawParameterValue("saturationMode");
     float outputGainValue = *parameters.getRawParameterValue("outputGain");
+    
+    auto* rateParam = parameters.getRawParameterValue("rate");
+    auto* depthParam = parameters.getRawParameterValue("depth");
+    auto* mixParam = parameters.getRawParameterValue("mix");
 
     // Apply the input gain to the buffer
     buffer.applyGain(inputGain);
@@ -107,46 +126,80 @@ void ClipSatAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
     
     
     auto numSamples = buffer.getNumSamples();
+    
 
     for (int sample = 0; sample < numSamples; ++sample)
     {
         // Smoothly update the parameter values
         smoothedDrive += smoothingFactor * (driveParam - smoothedDrive);
         smoothedDryWet += smoothingFactor * (dryWetParam - smoothedDryWet);
+        
+        auto inL = buffer.getReadPointer(0)[sample];
+        auto inR = buffer.getNumChannels() > 1 ? buffer.getReadPointer(1)[sample] : inL;
+
+        auto delayTime = (1.0f + std::sin(lfoPhase)) * 0.5f * *depthParam * 0.02f; // 20ms max delay
+        lfoPhase += *rateParam * 0.01f; // LFO rate
+        if (lfoPhase >= juce::MathConstants<float>::twoPi)
+            lfoPhase -= juce::MathConstants<float>::twoPi;
+
+        int delaySamples = static_cast<int>(delayTime * getSampleRate());
 
         for (int channel = 0; channel < totalNumInputChannels; ++channel)
         {
             auto* channelData = buffer.getWritePointer(channel);
             float cleanSignal = channelData[sample];
             float saturatedSignal = cleanSignal;
+            
+            // apply chorus if toggled
+            if (chorusOnOff)
+            {
+                auto* delayData1 = delayBuffer.getWritePointer(channel);
+                auto* delayData2 = delayBuffer2.getWritePointer(channel);
+                delayData1[delayWritePosition] = cleanSignal;
+                delayData2[delayWritePosition2] = cleanSignal;
 
+                int readPosition1 = delayWritePosition - static_cast<int>((1.0f + std::sin(lfoPhase)) * 0.5f * *depthParam * 0.02f * getSampleRate());
+                int readPosition2 = delayWritePosition2 - static_cast<int>((1.0f + std::sin(lfoPhase2)) * 0.5f * *depthParam * 0.02f * getSampleRate());
+
+                if (readPosition1 < 0) readPosition1 += delayBufferSamples;
+                if (readPosition2 < 0) readPosition2 += delayBufferSamples;
+
+                auto delaySample1 = delayData1[readPosition1];
+                auto delaySample2 = delayData2[readPosition2];
+
+                channelData[sample] = cleanSignal + (*mixParam * ((delaySample1 + delaySample2) - cleanSignal));
+            }
+                
+            
+            
+            float postChorusSignal = channelData[sample];
+            
             // Apply the saturation effect based on the selected mode
             if (satOnOff){
                 switch (static_cast<int>(saturationModeParam))
                 {
                     case 0: // Soft Sine
-                        saturatedSignal = std::sin(driveParam * cleanSignal);
+                        saturatedSignal = std::sin(driveParam * postChorusSignal);
                         break;
                     case 1: // Hard Curve
-                        saturatedSignal = cleanSignal - std::pow(cleanSignal, 3) * driveParam;
+                        saturatedSignal = postChorusSignal - std::pow(postChorusSignal, 3) * driveParam;
                         break;
                     case 2: // Analog Clip
-                        saturatedSignal = std::max(static_cast<float>(-driveParam), std::min(static_cast<float>(driveParam), cleanSignal));
+                        saturatedSignal = std::max(static_cast<float>(-driveParam), std::min(static_cast<float>(driveParam), postChorusSignal));
                         break;
                     case 3: // Sinoid Fold
-                        saturatedSignal = std::asin(std::sin(driveParam * cleanSignal));
+                        saturatedSignal = std::asin(std::sin(driveParam * postChorusSignal));
                         break;
                     default:
                         break;
                 }
             }
-            
-
             // Blend the processed (wet) signal with the original (dry) signal using smoothedDryWet
-            float mixedSignal = smoothedDryWet * saturatedSignal + (1 - smoothedDryWet) * cleanSignal;
+            float mixedSignal = smoothedDryWet * saturatedSignal + (1 - smoothedDryWet) * postChorusSignal;
 
             // Apply the output level control using smoothedOutput
             channelData[sample] = mixedSignal;
+            
             
             float processedSample = mixedSignal;
             
@@ -170,6 +223,14 @@ void ClipSatAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
             }
             channelData[sample] = processedSample;
         }
+        lfoPhase += *rateParam * 0.01f;
+        lfoPhase2 += *rateParam * 0.012f; // Slightly different rate for the second LFO
+
+        if (lfoPhase >= juce::MathConstants<float>::twoPi) lfoPhase -= juce::MathConstants<float>::twoPi;
+        if (lfoPhase2 >= juce::MathConstants<float>::twoPi) lfoPhase2 -= juce::MathConstants<float>::twoPi;
+
+        if (++delayWritePosition >= delayBufferSamples) delayWritePosition = 0;
+        if (++delayWritePosition2 >= delayBufferSamples) delayWritePosition2 = 0;
     }
     
 
